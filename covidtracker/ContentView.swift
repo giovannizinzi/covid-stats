@@ -22,8 +22,15 @@ struct ContentView_Previews: PreviewProvider {
 struct HomeView: View {
     @State var index = 0
     @State var location = "Texas"
+    @State var result : Result!
+    @State var main : MainData!
+    
     var body: some View{
         
+        VStack{
+        
+            if self.main != nil{
+            
         VStack {
             
             VStack(spacing: 15){
@@ -52,6 +59,9 @@ struct HomeView: View {
                     //This city can be populated dynamically
                     Button(action: {
                         self.index = 0
+                        self.result = nil
+                        self.main = nil
+                        self.getData()
                     }) {
                         Text(location)
                             .foregroundColor(self.index == 0 ? .black : .white)
@@ -63,6 +73,9 @@ struct HomeView: View {
                     //This would just be USA wide statistics
                     Button(action: {
                         self.index = 1
+                        self.result = nil
+                        self.main = nil
+                        self.getData()
                     }) {
                         Text("USA")
                             .foregroundColor(self.index == 1 ? .black : .white)
@@ -81,7 +94,7 @@ struct HomeView: View {
                     
                     VStack(spacing: 12){
                         Text("Cases")
-                        Text("220,000")
+                        Text("\(self.main.value)")
                             .fontWeight(.bold)
                     }
                     .padding(.vertical)
@@ -91,7 +104,7 @@ struct HomeView: View {
                     
                     VStack(spacing: 12){
                         Text("Deaths")
-                        Text("10,000")
+                        Text("\(self.main.value)")
                             .fontWeight(.bold)
                     }
                     .padding(.vertical)
@@ -106,7 +119,7 @@ struct HomeView: View {
                     VStack(spacing: 12){
                         Text("R")
                       + Text("t")
-                          .font(.system(size: 12.0))
+                          .font(.system(size: 14.0))
                           .baselineOffset(-2.0)
                         Text("1.08")
                             .fontWeight(.bold)
@@ -118,7 +131,7 @@ struct HomeView: View {
                     
                     VStack(spacing: 12){
                         Text("Recovered")
-                        Text("502,000")
+                        Text("\(self.main.value)")
                             .fontWeight(.bold)
                     }
                     .padding(.vertical)
@@ -128,7 +141,7 @@ struct HomeView: View {
                     
                     VStack(spacing: 12){
                         Text("Serious")
-                        Text("95,000")
+                        Text("\(self.main.value)")
                             .fontWeight(.bold)
                     }
                     .padding(.vertical)
@@ -196,14 +209,22 @@ struct HomeView: View {
             .cornerRadius(20)
             .offset(y: -20)
 
-                Text("Last Updated: " + toDay())
+                Text("Last Updated: " + yesterDay())
                 .foregroundColor(.white)
                 .fontWeight(.bold)
                 .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom)! + 10)
         }
         .background(Color("bg"))
         .edgesIgnoringSafeArea(.all)
-        .onAppear(perform: getData)
+            }
+            else{
+                Indicator()
+            }
+        }
+        .edgesIgnoringSafeArea(.all)
+        .onAppear() {
+            self.getData()
+        }
     }
     
     func getData() {
@@ -218,13 +239,34 @@ struct HomeView: View {
         //maybe should make this elif?
         else {
             print(yesterday)
-            url = ""
+            url = "https://api.covidcast.cmu.edu/epidata/covidcast/?data_source=jhu-csse&signal=confirmed_incidence_num&time_type=day&geo_type=nation&time_values=" + yesterday + "&geo_value=us"
+            print(url)
         }
+        
+        let session = URLSession(configuration: .default)
+        
+        session.dataTask(with: URL(string: url)!) { (data, _, err) in
+            
+            if err != nil{
+                print((err?.localizedDescription)!)
+                return
+        }
+            print("here is the data", data ?? "")
+
+            let jsonResult = try! JSONDecoder().decode(Result.self, from: data!)
+            for result in jsonResult.epidata {
+                print(result)
+                print(result.value)
+                self.main = result
+            }
+    }
+    .resume()
+    
     }
     
-    func toDay() -> String {
+    func yesterDay() -> String {
         var dayComponent = DateComponents()
-        dayComponent.day = 0
+        dayComponent.day = -1
         let calendar = Calendar.current
         let nextDay =  calendar.date(byAdding: dayComponent, to: Date())!
         let formatter = DateFormatter()
@@ -235,7 +277,7 @@ struct HomeView: View {
     
     func yesterdayForAPI() -> String {
         var dayComponent = DateComponents()
-        dayComponent.day = -1
+        dayComponent.day = -2
         let calendar = Calendar.current
         let nextDay =  calendar.date(byAdding: dayComponent, to: Date())!
         let formatter = DateFormatter()
@@ -243,5 +285,4 @@ struct HomeView: View {
         formatter.dateFormat = "yyyyMMdd"
         return formatter.string(from: nextDay) //Output is "March 6, 2020
     }
-    
 }
