@@ -285,4 +285,16 @@ struct HomeView: View {
         formatter.dateFormat = "yyyyMMdd"
         return formatter.string(from: nextDay) //Output is "March 6, 2020
     }
+    
+    // ok we need some sort of change here to handle the case where app crashes at midnight! Need to know when the data is refreshed too
+    func twoDaysAgoForAPI() -> String {
+        var dayComponent = DateComponents()
+        dayComponent.day = -2
+        let calendar = Calendar.current
+        let nextDay =  calendar.date(byAdding: dayComponent, to: Date())!
+        let formatter = DateFormatter()
+        formatter.locale = .current
+        formatter.dateFormat = "yyyyMMdd"
+        return formatter.string(from: nextDay) //Output is "March 6, 2020
+    }
 }
