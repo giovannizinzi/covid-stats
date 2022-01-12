@@ -21,6 +21,7 @@ struct ContentView_Previews: PreviewProvider {
 
 struct HomeView: View {
     @State var index = 0
+    @State var location = "Texas"
     var body: some View{
         
         VStack {
@@ -52,7 +53,7 @@ struct HomeView: View {
                     Button(action: {
                         self.index = 0
                     }) {
-                        Text("My City")
+                        Text(location)
                             .foregroundColor(self.index == 0 ? .black : .white)
                             .padding(.vertical, 12)
                             .frame(width: (UIScreen.main.bounds.width/2) - 30)
@@ -79,7 +80,7 @@ struct HomeView: View {
                 HStack(spacing: 15){
                     
                     VStack(spacing: 12){
-                        Text("Affected")
+                        Text("Cases")
                         Text("220,000")
                             .fontWeight(.bold)
                     }
@@ -103,8 +104,11 @@ struct HomeView: View {
                 HStack(spacing: 15){
                     
                     VStack(spacing: 12){
-                        Text("Active")
-                        Text("109,000")
+                        Text("R")
+                      + Text("t")
+                          .font(.system(size: 12.0))
+                          .baselineOffset(-2.0)
+                        Text("1.08")
                             .fontWeight(.bold)
                     }
                     .padding(.vertical)
@@ -192,24 +196,52 @@ struct HomeView: View {
             .cornerRadius(20)
             .offset(y: -20)
 
-                Text("Last Updated: Jan 11, 7:30AM CT")
+                Text("Last Updated: " + toDay())
                 .foregroundColor(.white)
                 .fontWeight(.bold)
                 .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom)! + 10)
         }
         .background(Color("bg"))
         .edgesIgnoringSafeArea(.all)
+        .onAppear(perform: getData)
     }
     
     func getData() {
         var url = ""
-        
+        var yesterday = yesterdayForAPI()
+        var state = "tx"
         if self.index == 0 {
-            url = ""
+            print("Yeserday for api:", yesterday)
+            url = "https://api.covidcast.cmu.edu/epidata/covidcast/?data_source=jhu-csse&signal=confirmed_incidence_num&time_type=day&geo_type=state&time_values=" + yesterday + "&geo_value=" + state
+            print(url)
         }
         //maybe should make this elif?
         else {
+            print(yesterday)
             url = ""
         }
     }
+    
+    func toDay() -> String {
+        var dayComponent = DateComponents()
+        dayComponent.day = 0
+        let calendar = Calendar.current
+        let nextDay =  calendar.date(byAdding: dayComponent, to: Date())!
+        let formatter = DateFormatter()
+        formatter.locale = .current
+        formatter.dateFormat = "MMMM d, yyyy"
+        return formatter.string(from: nextDay) //Output is "March 6, 2020
+    }
+    
+    func yesterdayForAPI() -> String {
+        var dayComponent = DateComponents()
+        dayComponent.day = -1
+        let calendar = Calendar.current
+        let nextDay =  calendar.date(byAdding: dayComponent, to: Date())!
+        let formatter = DateFormatter()
+        formatter.locale = .current
+        formatter.dateFormat = "yyyyMMdd"
+        return formatter.string(from: nextDay) //Output is "March 6, 2020
+    }
+    
 }
