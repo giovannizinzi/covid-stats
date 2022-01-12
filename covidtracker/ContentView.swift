@@ -25,7 +25,7 @@ struct HomeView: View {
         
         VStack {
             
-            VStack(spacing: 18){
+            VStack(spacing: 15){
                 
                 HStack{
                     
@@ -135,15 +135,81 @@ struct HomeView: View {
                 }
                 
                 
-                
             }
             .background(Color("bg"))
             .padding(.horizontal)
-            .padding(.bottom, 45)
+            .padding(.bottom, 40)
             
-            Spacer()
+            VStack{
+                
+                HStack{
+                    
+                    Text("Last 7 Days")
+                        .font(.title2)
+                        .foregroundColor(.black)
+                    
+                    Spacer()
+                }
+                .padding(.top)
+                .padding(.bottom, 2)
+                
+                HStack{
+
+                    ForEach(0...6,id: \.self){_ in
+                        
+                        VStack(spacing: 10){
+                            
+                            Text("330K")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            
+                            GeometryReader{g in
+                                
+                                VStack{
+                                    
+                                    Spacer(minLength: 0)
+                                    
+                                    Capsule()
+                                        .fill(Color("Color"))
+                                        .frame(width: 15)
+                                }
+                                
+                            }
+                            
+                            Text("4/4/20")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            
+                        }
+                        .padding(.bottom, 40)
+                    }
+                    
+                }
+            }
+            .padding(.horizontal)
+            .background(Color.white)
+            .padding(.bottom, -20)
+            .cornerRadius(20)
+            .offset(y: -20)
+
+                Text("Last Updated: Jan 11, 7:30AM CT")
+                .foregroundColor(.white)
+                .fontWeight(.bold)
+                .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom)! + 10)
         }
         .background(Color("bg"))
         .edgesIgnoringSafeArea(.all)
+    }
+    
+    func getData() {
+        var url = ""
+        
+        if self.index == 0 {
+            url = ""
+        }
+        //maybe should make this elif?
+        else {
+            url = ""
+        }
     }
 }
