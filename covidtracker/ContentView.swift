@@ -161,7 +161,7 @@ struct HomeView: View {
                 
                 HStack{
                     
-                    Text("Last 7 Days")
+                    Text("New Cases - Last 7 Days")
                         .font(.title2)
                         .foregroundColor(.black)
                     
@@ -229,7 +229,7 @@ struct HomeView: View {
     
     func getData() {
         var url = ""
-        var yesterday = yesterdayForAPI()
+        let yesterday = yesterdayForAPI()
         var state = "tx"
         if self.index == 0 {
             print("Yeserday for api:", yesterday)
@@ -262,6 +262,24 @@ struct HomeView: View {
     }
     .resume()
     
+    //url1 will contain data about
+    var urlWeekly = ""
+    var weekAgo = weeklyForAPI()
+    print("What day was it a week ago", weekAgo)
+    if self.index == 0 {
+        urlWeekly = "https://api.covidcast.cmu.edu/epidata/covidcast/?data_source=jhu-csse&signal=confirmed_incidence_num&time_type=day&geo_type=state&time_values=" + yesterday + "&geo_value=" + state
+        print(url)
+    }
+    //maybe should make this elif?
+    else {
+        print(yesterday)
+        urlWeekly = "https://api.covidcast.cmu.edu/epidata/covidcast/?data_source=jhu-csse&signal=confirmed_incidence_num&time_type=day&geo_type=nation&time_values=" + yesterday + "&geo_value=us"
+        print(url)
+    }
+        
+    
+    var urlForRt = ""
+    
     }
     
     func yesterDay() -> String {
@@ -277,7 +295,18 @@ struct HomeView: View {
     
     func yesterdayForAPI() -> String {
         var dayComponent = DateComponents()
-        dayComponent.day = -2
+        dayComponent.day = -1
+        let calendar = Calendar.current
+        let nextDay =  calendar.date(byAdding: dayComponent, to: Date())!
+        let formatter = DateFormatter()
+        formatter.locale = .current
+        formatter.dateFormat = "yyyyMMdd"
+        return formatter.string(from: nextDay) //Output is "March 6, 2020
+    }
+    
+    func weeklyForAPI() -> String {
+        var dayComponent = DateComponents()
+        dayComponent.day = -7
         let calendar = Calendar.current
         let nextDay =  calendar.date(byAdding: dayComponent, to: Date())!
         let formatter = DateFormatter()
