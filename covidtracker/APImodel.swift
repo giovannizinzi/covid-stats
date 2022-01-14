@@ -32,6 +32,25 @@ struct MainData: Decodable{
     var sample_size : String?
 }
 
+struct PercentageData: Decodable{
+    var geo_value : String?
+    var signal : String?
+    var source : String?
+    var geo_type : String?
+    var time_type : String?
+    var time_value : Int
+    var direction : String?
+    var issue : Int
+    var lag : Int
+    var missing_value : Int
+    var missing_stderr : Int
+    var missing_sample_size : Int
+    //VALUE IS THE IMPORTANT ONE FOR THIS RESULT
+    var value : Double
+    var stderr : String?
+    var sample_size : String?
+}
+
 struct MyState : Decodable{
     var timeline : [String: [String : Int]]
 }
@@ -42,6 +61,10 @@ struct Country : Decodable{
 
 struct Result: Decodable {
     var epidata: [MainData]
+}
+
+struct PercentageResult: Decodable {
+    var epidata: [PercentageData]
 }
 
 struct Indicator : UIViewRepresentable {

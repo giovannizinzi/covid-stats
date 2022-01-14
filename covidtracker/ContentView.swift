@@ -25,6 +25,9 @@ struct HomeView: View {
     @State var location = "TX"
     @State var result : Result!
     @State var main : MainData!
+    @State var hospitalization : MainData!
+    @State var drvisit : PercentageData!
+    @State var death : MainData!
     @State var daily : [Daily] = []
     @State var greatest = 0
     @State var useTwoDays = false
@@ -85,7 +88,7 @@ struct HomeView: View {
                                             .padding(12)
                                         Text("Hospitalized?").bold().font(.system(size: 28))
                                         .padding(12)
-                                        Text("Estimated percentage of new hospital admissions with COVID-associated diagnoses. This stat is unavailable at the national level.")
+                                        Text("New hospital admissions with COVID-associated diagnoses.")
                                             .padding(12)
                                         Spacer()
                                         Text("*Data Sources:* The U.S. Department of Health & Human Services, Johns Hopkins University's CSSE, Carnegie Mellon University's Delphi Research Group, and the Centre for Mathematical Modelling of Infectious Diseases.").font(.system(size: 12))
@@ -181,8 +184,13 @@ struct HomeView: View {
                     VStack(spacing: 12){
                         Text("Deaths")
                             .fontWeight(.bold)
-                        Text("\(self.main.value)")
+                        if(self.death != nil){
+                        Text("\(self.death.value)")
                             .fontWeight(.bold)
+                        }
+                        else {
+                            Text("?")
+                        }
                     }
                     .padding(.vertical)
                     .frame(width: (UIScreen.main.bounds.width / 2) - 30)
@@ -210,8 +218,13 @@ struct HomeView: View {
                     
                     VStack(spacing: 12){
                         Text("Hospitalized")
-                        Text("\(self.main.value)")
+                        if(self.hospitalization != nil){
+                        Text("\(self.hospitalization.value)")
                             .fontWeight(.bold)
+                        }
+                        else {
+                            Text("?")
+                        }
                     }
                     .padding(.vertical)
                     .frame(width: (UIScreen.main.bounds.width / 3) - 30)
@@ -220,7 +233,13 @@ struct HomeView: View {
                     
                     VStack(spacing: 12){
                         Text("Dr. Visits")
-                        Text("\(self.main.value)")
+                        if(self.drvisit != nil){
+                            Text("\(self.drvisit.value, specifier: "%.2f")%")
+                            .fontWeight(.bold)
+                        }
+                        else {
+                            Text("?")
+                        }
                     }
                     .padding(.vertical)
                     .frame(width: (UIScreen.main.bounds.width / 3) - 30)
@@ -493,6 +512,88 @@ struct HomeView: View {
     }
     .resume()
         
+    var urlForHospitalization = ""
+    var fourDaysAgo = fourDaysAgoForAPI()
+
+    if self.index == 0 {
+        urlForHospitalization = "https://api.covidcast.cmu.edu/epidata/covidcast/?data_source=hhs&signal=confirmed_admissions_covid_1d&time_type=day&geo_type=state&time_values=" + fourDaysAgo + "&geo_value=" + state
+    }
+    //maybe should make this elif?
+    else {
+        urlForHospitalization = "https://api.covidcast.cmu.edu/epidata/covidcast/?data_source=hhs&signal=confirmed_admissions_covid_1d&time_type=day&geo_type=nation&time_values=" + fourDaysAgo + "&geo_value=us"
+    }
+    
+        let sessionHospitalization = URLSession(configuration: .default)
+        
+        sessionHospitalization.dataTask(with: URL(string: urlForHospitalization)!) { (data, _, err) in
+            
+            if err != nil{
+                print((err?.localizedDescription)!)
+                return
+        }
+            let jsonResultHospitalization = try! JSONDecoder().decode(Result.self, from: data!)
+            for resultH in jsonResultHospitalization.epidata {
+                print(resultH)
+                self.hospitalization = resultH
+                print("hospitalization value", resultH.value)
+            }
+    }
+    .resume()
+        
+        var urlDeaths = ""
+        if self.index == 0 {
+            urlDeaths = "https://api.covidcast.cmu.edu/epidata/covidcast/?data_source=jhu-csse&signal=deaths_incidence_num&time_type=day&geo_type=state&time_values=" + yesterday + "&geo_value=" + state
+        }
+        else {
+            urlDeaths = "https://api.covidcast.cmu.edu/epidata/covidcast/?data_source=jhu-csse&signal=deaths_incidence_num&time_type=day&geo_type=nation&time_values=" + yesterday + "&geo_value=us"
+        }
+        
+        let sessionDeaths = URLSession(configuration: .default)
+        
+        sessionDeaths.dataTask(with: URL(string: urlDeaths)!) { (data, _, err) in
+            
+            if err != nil{
+                print((err?.localizedDescription)!)
+                return
+        }
+            print("here is the data", data ?? "")
+
+            let jsonResultDeaths = try! JSONDecoder().decode(Result.self, from: data!)
+            for resultD in jsonResultDeaths.epidata {
+                print("deaths", resultD.value)
+                self.death = resultD
+            }
+            
+    }
+    .resume()
+        
+        var urlDrVisits = ""
+        if self.index == 0 {
+            urlDrVisits = "https://api.covidcast.cmu.edu/epidata/covidcast/?data_source=doctor-visits&signal=smoothed_cli&time_type=day&geo_type=state&time_values=" + weekAgo + "&geo_value=" + state
+            let sessionDrVisits = URLSession(configuration: .default)
+            
+            sessionDrVisits.dataTask(with: URL(string: urlDrVisits)!) { (data, _, err) in
+                
+                if err != nil{
+                    print((err?.localizedDescription)!)
+                    return
+            }
+                print("here is the data", data ?? "")
+
+                let jsonResultDrVisit = try! JSONDecoder().decode(PercentageResult.self, from: data!)
+                for resultDrVisit in jsonResultDrVisit.epidata {
+                    print("deaths", resultDrVisit.value)
+                    self.drvisit = resultDrVisit
+                }
+                
+        }
+        .resume()
+        }
+        else {
+            self.drvisit = nil
+        }
+        
+        
     }
     
     private func parseHTML(html : String)
@@ -609,6 +710,18 @@ struct HomeView: View {
     func twoDaysAgoForAPI() -> String {
         var dayComponent = DateComponents()
         dayComponent.day = -2
+        let calendar = Calendar.current
+        let nextDay =  calendar.date(byAdding: dayComponent, to: Date())!
+        let formatter = DateFormatter()
+        formatter.locale = .current
+        formatter.dateFormat = "yyyyMMdd"
+        return formatter.string(from: nextDay)
+    }
+    
+    //using this one to get hospitalizations. Slightly lazy but works
+    func fourDaysAgoForAPI() -> String {
+        var dayComponent = DateComponents()
+        dayComponent.day = -4
         let calendar = Calendar.current
         let nextDay =  calendar.date(byAdding: dayComponent, to: Date())!
         let formatter = DateFormatter()
