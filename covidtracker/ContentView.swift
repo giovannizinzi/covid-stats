@@ -29,14 +29,19 @@ struct HomeView: View {
     @State var greatest = 0
     @State var useTwoDays = false
     @State var apiTest = false
+    @State var rtNumber = ""
     
     //Need to add one for Rt, deaths, dr visits, hospitalizations
     
     @Environment(\.presentationMode) var presentationMode
     @State private var showPopover: Bool = false
-    var dropDownList = [ "AK","AL","AR","AS","AZ","CA","CO","CT","DC","DE","FL","GA","GU","HI","IA","ID","IL","IN","KS","KY","LA","MA","MD","ME","MI","MN","MO","MS","MT","NC","ND","NE","NH","NJ","NM","NV","NY","OH","OK","OR","PA","PR","RI","SC","SD","TN","TX","UT","VA","VI","VT","WA","WI","WV","WY"]
+    //American samoa (AS) unsupported
+    var dropDownList = [ "AK","AL","AR","AZ","CA","CO","CT","DC","DE","FL","GA","GU","HI","IA","ID","IL","IN","KS","KY","LA","MA","MD","ME","MI","MN","MO","MS","MT","NC","ND","NE","NH","NJ","NM","NV","NY","OH","OK","OR","PA","PR","RI","SC","SD","TN","TX","UT","VA","VI","VT","WA","WI","WV","WY"]
     var placeholder = "State"
 
+    //American samoa (AS) unsupported
+    var dictionaryForLookup = ["AK": "alaska", "AL": "alabama", "AR": "arkansas","AZ": "arizona", "CA": "california", "CO": "colorado", "CT": "connecticut", "DC": "district-of-columbia", "DE": "delaware", "FL": "florida", "GA": "georgia", "GU": "guam", "HI": "hawaii", "IA": "iowa", "ID": "idaho", "IL": "illinois", "IN": "indiana", "KS": "kansas", "KY": "kentucky", "LA": "louisiana", "MA": "massachusetts", "MD": "maryland", "ME": "maine", "MI": "michigan", "MN": "minnesota", "MO": "missouri", "MS": "mississippi", "MT": "montana", "NC": "north-carolina","ND": "north-dakota", "NE": "nebraska", "NH": "new-hampshire", "NJ": "new-jersey","NM": "new-mexico", "NV": "nevada", "NY": "new-york", "OH": "ohio", "OK": "oklahoma", "OR": "oregon", "PA": "pennsylvania", "PR": "puerto-rico", "RI": "rhode-island", "SC": "south-carolina", "SD": "south-dakota", "TN": "tennessee", "TX": "texas", "UT": "utah", "VA": "virginia", "VI": "virgin-islands", "VT": "vermont", "WA": "washington", "WI": "wisconsin", "WV": "west-virginia","WY": "wyoming"]
+    
     var uniqueKey: String {
         UUID().uuidString
     }
@@ -196,7 +201,7 @@ struct HomeView: View {
                               .baselineOffset(-2.0)
                         
                         }
-                        Text("1.08")
+                        Text("\(self.rtNumber)")
                     }
                     .padding(.vertical)
                     .frame(width: (UIScreen.main.bounds.width / 3) - 30)
@@ -460,8 +465,17 @@ struct HomeView: View {
     }
     .resume()
         
+    var urlForRt = ""
     
-    var urlForRt =  "https://epiforecasts.io/covid/posts/national/united-states/"
+    if self.index == 0 {
+        var locationName = dictionaryForLookup["\(self.location)"]!
+        print(locationName)
+        urlForRt = "https://epiforecasts.io/covid/posts/subnational/united-states/" + locationName
+    }
+    //maybe should make this elif?
+    else {
+        urlForRt = "https://epiforecasts.io/covid/posts/national/united-states/"
+    }
     
         let sessionRt = URLSession(configuration: .default)
         
@@ -483,20 +497,36 @@ struct HomeView: View {
     
     private func parseHTML(html : String)
        {
-           var textResult = [String]()
+           var textResult = ""
 
            do
            {
                let doc: Document = try SwiftSoup.parse(html)
                let els: Elements = try doc.select("table.table")
                var count = 0
+               
                for link: Element in els.array() {
                    let linkHref: String = try link.attr("tr")
                    let linkText: String = try link.text()
-                   textResult.append(linkText)
-                   print(linkText)
+                   textResult = linkText
                    }
-               print("Yo did we get results here???", annTitles)
+               
+//               let range = NSRange(location: 0, length: textResult.utf16.count)
+//               let regex = try! NSRegularExpression(pattern: "[a-z]")
+//               print(regex.firstMatch(in: textResult, options: [], range: range) != nil)
+               let matched = matches(for: "no. [0-9].[0-9]", in: textResult)
+               print(matched)
+               print("Yo did we get results here???", textResult)
+               
+               if let firstMatch = matched.first {
+                   //just dropping characters lmao...
+                   let rtNum = String(firstMatch.dropFirst(4))
+                   print("found it: \(rtNum)")
+                   self.rtNumber = rtNum
+               } else {
+                 print("nothing found :(")
+               }
+               
            }
            catch Exception.Error(let type, let message)
            {
@@ -510,6 +540,21 @@ struct HomeView: View {
           
            print("All good!")
        }
+    
+    func matches(for regex: String, in text: String) -> [String] {
+
+        do {
+            let regex = try NSRegularExpression(pattern: regex)
+            let results = regex.matches(in: text,
+                                        range: NSRange(text.startIndex..., in: text))
+            return results.map {
+                String(text[Range($0.range, in: text)!])
+            }
+        } catch let error {
+            print("invalid regex: \(error.localizedDescription)")
+            return []
+        }
+    }
     
     func getHeight(value: Int, height: CGFloat)->CGFloat{
         
