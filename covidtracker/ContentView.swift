@@ -26,6 +26,8 @@ struct HomeView: View {
     @State var main : MainData!
     @State var daily : [Daily] = []
     @State var greatest = 0
+    @State var useTwoDays = false
+    @State var apiTest = false
     
     //Need to add one for Rt, deaths, dr visits, hospitalizations
     
@@ -297,7 +299,7 @@ struct HomeView: View {
                                     Rectangle()
                                         .fill(Color("affected"))
                                         .frame(width: 25, height: getHeight(value: index.cases, height: g.frame(in: .global).height))
-                                        .padding(.horizontal, 10)
+                                        .padding(.horizontal, 12)
                                 }
                                 
                             }
@@ -330,19 +332,56 @@ struct HomeView: View {
             }
             else{
                 Indicator(isAnimating: .constant(true))
-                Text("Fetching Data from JHU, Epiforecasts, and Delphi group")
+                Text("Fetching Data from The U.S. Department of Health & Human Services, Johns Hopkins University's CSSE, Carnegie Mellon University's Delphi Research Group, and the Centre for Mathematical Modelling of Infectious Diseases")
             }
         }
         .edgesIgnoringSafeArea(.all)
         }
         .onAppear() {
-            self.getData()
+            self.testAPIRequest()
         }
+    }
+    
+    //There is a performance improvement for sure lol
+    func testAPIRequest() {
+        var url = ""
+        var mainTest : MainData!
+        var yesterday = yesterdayForAPI()
+        let state = self.location
+            url = "https://api.covidcast.cmu.edu/epidata/covidcast/?data_source=jhu-csse&signal=confirmed_incidence_num&time_type=day&geo_type=state&time_values=" + yesterday + "&geo_value=" + state
+
+        let session = URLSession(configuration: .default)
+
+        session.dataTask(with: URL(string: url)!) { (data, _, err) in
+
+            if err != nil{
+                print((err?.localizedDescription)!)
+                return
+        }
+
+            let jsonResult = try! JSONDecoder().decode(Result.self, from: data!)
+            for result in jsonResult.epidata {
+                mainTest = result
+            }
+
+            if(mainTest == nil) {
+                self.useTwoDays.toggle()
+                print("should be toggled")
+                self.getData()
+            }
+            else{
+                self.getData()
+            }
+    }
+    .resume()
     }
     
     func getData() {
         var url = ""
-        let yesterday = yesterdayForAPI()
+        var yesterday = yesterdayForAPI()
+        if (self.useTwoDays == true) {
+            yesterday = twoDaysAgoForAPI()
+        }
         let state = self.location
         if self.index == 0 {
 //            print("Yeserday for api:", yesterday)
@@ -370,9 +409,19 @@ struct HomeView: View {
                 print(result.value)
                 self.main = result
             }
+            
+            if(self.main == nil) {
+                print("DID THIS HAPPEN>>>")
+                self.useTwoDays.toggle()
+                self.index = 0
+                self.result = nil
+                self.daily = []
+                self.main = nil
+                getData()
+            }
     }
     .resume()
-    
+        
     //url1 will contain data about
     var urlWeekly = ""
     var weekAgo = weeklyForAPI()
@@ -444,6 +493,11 @@ struct HomeView: View {
         let formatter = DateFormatter()
         formatter.locale = .current
         formatter.dateFormat = "yyyyMMdd"
+//        let formatter1 = DateFormatter()
+//        formatter1.locale = .current
+//        formatter1.dateFormat = "HH"
+//        let timeMerica = formatter1.string(from: nextDay)
+//        print(formatter1.string(from: nextDay))
         return formatter.string(from: nextDay)
     }
     
