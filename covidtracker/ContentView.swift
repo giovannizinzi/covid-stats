@@ -24,6 +24,9 @@ struct HomeView: View {
     @State var location = "TX"
     @State var result : Result!
     @State var main : MainData!
+    @State var daily : [Daily] = []
+    @Environment(\.presentationMode) var presentationMode
+    @State private var showPopover: Bool = false
     var dropDownList = [ "AK","AL","AR","AS","AZ","CA","CO","CT","DC","DE","FL","GA","GU","HI","IA","ID","IL","IN","KS","KY","LA","MA","MD","ME","MI","MN","MO","MS","MT","NC","ND","NE","NH","NJ","NM","NV","NY","OH","OK","OR","PA","PR","RI","SC","SD","TN","TX","UT","VA","VI","VT","WA","WI","WV","WY"]
     var placeholder = "State"
 
@@ -46,7 +49,36 @@ struct HomeView: View {
                         .font(.title)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
-                    
+                    Button(action: {
+                            self.showPopover = true }) {
+                                Image(systemName: "info.circle")
+                            .renderingMode(.template)
+                            .resizable()
+                            .frame(width: 28, height: 28)
+                            .foregroundColor(.white)
+                            .accentColor(.blue)
+                                }.popover(
+                                    isPresented: self.$showPopover
+                                ) {
+                                        Text("*swipe down to dismiss*").font(.system(size: 12))
+                                        .padding(12)
+                                        Divider()
+                                        Text("What is Rt?").bold().font(.system(size: 28))
+                                            .padding(12)
+                                        Text("The effective reproduction rate - It measures how many other people a covid positive person is likely to infect. If below 1, then over time the virus will die down; If above 1, then the virus will continue to grow.")
+                                            .padding(12)
+                                        Text("Dr. Visits?").bold().font(.system(size: 28))
+                                        .padding(12)
+                                        Text("This is an estimated percentage of covid-related doctor's visits on a given day. This stat is unavailable at the national level.")
+                                            .padding(12)
+                                        Text("Hospitalized?").bold().font(.system(size: 28))
+                                        .padding(12)
+                                        Text("Estimated percentage of new hospital admissions with COVID-associated diagnoses. This stat is unavailable at the national level.")
+                                            .padding(12)
+                                        Spacer()
+                                        Text("*Data Sources:* The U.S. Department of Health & Human Services, Johns Hopkins University's CSSE, Carnegie Mellon University's Delphi Research Group, and the Centre for Mathematical Modelling of Infectious Diseases.").font(.system(size: 12))
+                                        .padding(12)
+                                }
                     Spacer()
 
                     Group{
@@ -54,7 +86,11 @@ struct HomeView: View {
                             ForEach(dropDownList, id: \.self){ stateCode in
                                 Button(stateCode) {
                                     self.location = stateCode
-                                    getData()
+                                    self.index = 0
+                                    self.result = nil
+                                    self.daily = []
+                                    //self.main = nil
+                                    self.getData()
                                 }
                             }
                         } label: {
@@ -81,21 +117,11 @@ struct HomeView: View {
                 .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top)! + 15)
                 
                 HStack{
-//                    Group {
-//                        DropdownSelector(
-//                            placeholder: "State",
-//                            options: options,
-//                            onOptionSelected: { option in
-//                                print(option)
-//                        })
-//                        .padding(.horizontal)
-//                        .background(self.index == 0 ? Color.white : Color.clear)
-//                        .clipShape(Capsule())
-//                    }
-                    //This city can be populated dynamically
+                    
                     Button(action: {
                         self.index = 0
                         self.result = nil
+                        self.daily = []
                         //self.main = nil
                         self.getData()
                     }) {
@@ -110,6 +136,7 @@ struct HomeView: View {
                     Button(action: {
                         self.index = 1
                         self.result = nil
+                        self.daily = []
                         //self.main = nil
                         self.getData()
                     }) {
@@ -130,6 +157,7 @@ struct HomeView: View {
                     
                     VStack(spacing: 12){
                         Text("Cases")
+                            .fontWeight(.bold)
                         Text("\(self.main.value)")
                             .fontWeight(.bold)
                     }
@@ -140,6 +168,7 @@ struct HomeView: View {
                     
                     VStack(spacing: 12){
                         Text("Deaths")
+                            .fontWeight(.bold)
                         Text("\(self.main.value)")
                             .fontWeight(.bold)
                     }
@@ -153,10 +182,13 @@ struct HomeView: View {
                 HStack(spacing: 15){
                     
                     VStack(spacing: 12){
-                        Text("R")
-                      + Text("t")
-                          .font(.system(size: 14.0))
-                          .baselineOffset(-2.0)
+                        HStack{
+                            Text("R")
+                          + Text("t")
+                              .font(.system(size: 14.0))
+                              .baselineOffset(-2.0)
+                        
+                        }
                         Text("1.08")
                             .fontWeight(.bold)
                     }
@@ -166,7 +198,7 @@ struct HomeView: View {
                     .cornerRadius(12)
                     
                     VStack(spacing: 12){
-                        Text("Recovered")
+                        Text("Hospitalized")
                         Text("\(self.main.value)")
                             .fontWeight(.bold)
                     }
@@ -176,7 +208,7 @@ struct HomeView: View {
                     .cornerRadius(12)
                     
                     VStack(spacing: 12){
-                        Text("Serious")
+                        Text("Dr. Visits")
                         Text("\(self.main.value)")
                             .fontWeight(.bold)
                     }
@@ -207,13 +239,44 @@ struct HomeView: View {
                 .padding(.bottom, 2)
                 
                 HStack{
-
-                    ForEach(0...6,id: \.self){_ in
+                    if(self.daily.isEmpty) {
+                        ForEach(0...6,id: \.self){_ in
+                                               
+                                               VStack(spacing: 10){
+                                                   
+                                                   Text(" ")
+                                                       .font(.caption)
+                                                       .foregroundColor(.gray)
+                                                   
+                                                   GeometryReader{g in
+                                                       
+                                                       VStack{
+                                                           
+                                                           Spacer(minLength: 0)
+                                                           
+                                                           Capsule()
+                                                               .fill(Color.clear)
+                                                               .frame(width: 15)
+                                                       }
+                                                       
+                                                   }
+                                                   
+                                                   Text(" ")
+                                                       .font(.caption)
+                                                       .foregroundColor(.gray)
+                                                   
+                                               }
+                                               .padding(.bottom, 40)
+                            }
+                    }
+                    else {
+                    ForEach(self.daily){index in
                         
                         VStack(spacing: 10){
                             
-                            Text("330K")
-                                .font(.caption)
+                            Text("\(index.cases)")
+                                .lineLimit(1)
+                                .font(.system(size: 9))
                                 .foregroundColor(.gray)
                             
                             GeometryReader{g in
@@ -223,17 +286,19 @@ struct HomeView: View {
                                     Spacer(minLength: 0)
                                     
                                     Capsule()
-                                        .fill(Color.clear)
-                                        .frame(width: 15)
+                                        .fill(Color("death"))
+                                        .frame(width: 15, height: getHeight(value: index.cases, height: g.frame(in: .global).height))
                                 }
                                 
                             }
                             
-                            Text("4/4/20")
+                            Text("\(index.day)")
+                                .lineLimit(1)
                                 .font(.caption)
                                 .foregroundColor(.gray)
                             
                         }
+                    }
                         .padding(.bottom, 40)
                     }
                     
@@ -255,7 +320,7 @@ struct HomeView: View {
             }
             else{
                 Indicator(isAnimating: .constant(true))
-                Text("Fetching Data")
+                Text("Fetching Data from JHU, Epiforecasts, and Delphi group")
             }
         }
         .edgesIgnoringSafeArea(.all)
@@ -268,17 +333,15 @@ struct HomeView: View {
     func getData() {
         var url = ""
         let yesterday = yesterdayForAPI()
-        var state = self.location
+        let state = self.location
         if self.index == 0 {
-            print("Yeserday for api:", yesterday)
+//            print("Yeserday for api:", yesterday)
             url = "https://api.covidcast.cmu.edu/epidata/covidcast/?data_source=jhu-csse&signal=confirmed_incidence_num&time_type=day&geo_type=state&time_values=" + yesterday + "&geo_value=" + state
-            print(url)
+//            print(url)
         }
         //maybe should make this elif?
         else {
-            print(yesterday)
             url = "https://api.covidcast.cmu.edu/epidata/covidcast/?data_source=jhu-csse&signal=confirmed_incidence_num&time_type=day&geo_type=nation&time_values=" + yesterday + "&geo_value=us"
-            print(url)
         }
         
         let session = URLSession(configuration: .default)
@@ -306,7 +369,6 @@ struct HomeView: View {
     print("What day was it a week ago", weekAgo)
     if self.index == 0 {
         urlWeekly = "https://api.covidcast.cmu.edu/epidata/covidcast/?data_source=jhu-csse&signal=confirmed_incidence_num&time_type=day&geo_type=state&time_values=" + weekAgo + "-" + yesterday + "&geo_value=" + state
-        print(url)
     }
     //maybe should make this elif?
     else {
@@ -315,9 +377,35 @@ struct HomeView: View {
         print(url)
     }
         
+        let sessionWeekly = URLSession(configuration: .default)
+        
+        sessionWeekly.dataTask(with: URL(string: urlWeekly)!) { (data, _, err) in
+            
+            if err != nil{
+                print((err?.localizedDescription)!)
+                return
+        }
+            print("here is the data", data ?? "")
+            var count = 0
+            let jsonResult = try! JSONDecoder().decode(Result.self, from: data!)
+            for result in jsonResult.epidata {
+                print("WEEKLY", result)
+                print(result.value)
+                self.daily.append(Daily(id: count, day: convertDateFormat(date: String(result.time_value)), cases: result.value))
+                count += 1
+            }
+            print(self.daily)
+    }
+    .resume()
+        
     
     var urlForRt = ""
     
+    }
+    
+    func getHeight(value: Int, height: CGFloat)->CGFloat{
+        
+        return 0
     }
     
     func yesterDay() -> String {
@@ -328,7 +416,7 @@ struct HomeView: View {
         let formatter = DateFormatter()
         formatter.locale = .current
         formatter.dateFormat = "MMMM d, yyyy"
-        return formatter.string(from: nextDay) //Output is "March 6, 2020
+        return formatter.string(from: nextDay)
     }
     
     func yesterdayForAPI() -> String {
@@ -339,7 +427,7 @@ struct HomeView: View {
         let formatter = DateFormatter()
         formatter.locale = .current
         formatter.dateFormat = "yyyyMMdd"
-        return formatter.string(from: nextDay) //Output is "March 6, 2020
+        return formatter.string(from: nextDay)
     }
     
     func weeklyForAPI() -> String {
@@ -350,7 +438,7 @@ struct HomeView: View {
         let formatter = DateFormatter()
         formatter.locale = .current
         formatter.dateFormat = "yyyyMMdd"
-        return formatter.string(from: nextDay) //Output is "March 6, 2020
+        return formatter.string(from: nextDay)
     }
     
     // ok we need some sort of change here to handle the case where app crashes at midnight! Need to know when the data is refreshed too
@@ -362,6 +450,15 @@ struct HomeView: View {
         let formatter = DateFormatter()
         formatter.locale = .current
         formatter.dateFormat = "yyyyMMdd"
-        return formatter.string(from: nextDay) //Output is "March 6, 2020
+        return formatter.string(from: nextDay)
     }
+    
+    func convertDateFormat(date: String) -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyyMMdd"
+        let newDate = dateFormatter.date(from: date)
+        dateFormatter.setLocalizedDateFormatFromTemplate("MMM d")
+        return dateFormatter.string(from: newDate!)
+    }
+    
 }
