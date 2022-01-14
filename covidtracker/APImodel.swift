@@ -45,15 +45,17 @@ struct Result: Decodable {
 }
 
 struct Indicator : UIViewRepresentable {
-    
+    @Binding var isAnimating: Bool
+
     func makeUIView(context: Context) -> UIActivityIndicatorView {
         let view = UIActivityIndicatorView(style: .large)
-        view.startAnimating()
+        view.color = UIColor.systemBlue
         return view
     }
     
     func updateUIView(_ uiView: UIActivityIndicatorView, context: Context) {
-        
+        isAnimating ? uiView.startAnimating() : uiView.stopAnimating()
         
     }
+    
 }

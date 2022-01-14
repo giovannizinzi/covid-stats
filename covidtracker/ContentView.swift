@@ -21,15 +21,20 @@ struct ContentView_Previews: PreviewProvider {
 
 struct HomeView: View {
     @State var index = 0
-    @State var location = "Texas"
+    @State var location = "TX"
     @State var result : Result!
     @State var main : MainData!
-    
+    var dropDownList = [ "AK","AL","AR","AS","AZ","CA","CO","CT","DC","DE","FL","GA","GU","HI","IA","ID","IL","IN","KS","KY","LA","MA","MD","ME","MI","MN","MO","MS","MT","NC","ND","NE","NH","NJ","NM","NV","NY","OH","OK","OR","PA","PR","RI","SC","SD","TN","TX","UT","VA","VI","VT","WA","WI","WV","WY"]
+    var placeholder = "State"
+
+    var uniqueKey: String {
+        UUID().uuidString
+    }
     var body: some View{
-        
+        ZStack{
         VStack{
         
-            if self.main != nil{
+        if self.main != nil{
             
         VStack {
             
@@ -37,30 +42,61 @@ struct HomeView: View {
                 
                 HStack{
                     
-                    Text("Daily Covid Statistics")
+                    Text("Daily Covid Stats")
                         .font(.title)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
                     
                     Spacer()
+
+                    Group{
+                        Menu {
+                            ForEach(dropDownList, id: \.self){ stateCode in
+                                Button(stateCode) {
+                                    self.location = stateCode
+                                    getData()
+                                }
+                            }
+                        } label: {
+                            VStack(spacing: 5){
+                                HStack(spacing: 2){
+                                    Text(location.isEmpty ? placeholder : location)
+                                        .foregroundColor(location.isEmpty ? .gray : .white)
+                                        .bold()
+                                    Spacer()
+                                    Image(systemName: "chevron.down")
+                                        .foregroundColor(Color.white)
+                                        .font(Font.system(size: 20, weight: .bold))
+                                }
+                                .padding(.horizontal, 1)
+                                Rectangle()
+                                    .fill(Color.white)
+                                    .frame(height: 2)
+                            }
+                        }
+                    }.frame(width: 75)
                     
-                    Button(action: {
-                        
-                    }) {
-                        //their country? Maybe could have info on where the statistics are from?
-                        Image(systemName: "info.circle")
-                            .foregroundColor(.white)
-                            .scaleEffect(1.5)
-                    }
+                    
                 }
                 .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top)! + 15)
                 
                 HStack{
+//                    Group {
+//                        DropdownSelector(
+//                            placeholder: "State",
+//                            options: options,
+//                            onOptionSelected: { option in
+//                                print(option)
+//                        })
+//                        .padding(.horizontal)
+//                        .background(self.index == 0 ? Color.white : Color.clear)
+//                        .clipShape(Capsule())
+//                    }
                     //This city can be populated dynamically
                     Button(action: {
                         self.index = 0
                         self.result = nil
-                        self.main = nil
+                        //self.main = nil
                         self.getData()
                     }) {
                         Text(location)
@@ -74,7 +110,7 @@ struct HomeView: View {
                     Button(action: {
                         self.index = 1
                         self.result = nil
-                        self.main = nil
+                        //self.main = nil
                         self.getData()
                     }) {
                         Text("USA")
@@ -187,7 +223,7 @@ struct HomeView: View {
                                     Spacer(minLength: 0)
                                     
                                     Capsule()
-                                        .fill(Color("Color"))
+                                        .fill(Color.clear)
                                         .frame(width: 15)
                                 }
                                 
@@ -218,10 +254,12 @@ struct HomeView: View {
         .edgesIgnoringSafeArea(.all)
             }
             else{
-                Indicator()
+                Indicator(isAnimating: .constant(true))
+                Text("Fetching Data")
             }
         }
         .edgesIgnoringSafeArea(.all)
+        }
         .onAppear() {
             self.getData()
         }
@@ -230,7 +268,7 @@ struct HomeView: View {
     func getData() {
         var url = ""
         let yesterday = yesterdayForAPI()
-        var state = "tx"
+        var state = self.location
         if self.index == 0 {
             print("Yeserday for api:", yesterday)
             url = "https://api.covidcast.cmu.edu/epidata/covidcast/?data_source=jhu-csse&signal=confirmed_incidence_num&time_type=day&geo_type=state&time_values=" + yesterday + "&geo_value=" + state
@@ -267,13 +305,13 @@ struct HomeView: View {
     var weekAgo = weeklyForAPI()
     print("What day was it a week ago", weekAgo)
     if self.index == 0 {
-        urlWeekly = "https://api.covidcast.cmu.edu/epidata/covidcast/?data_source=jhu-csse&signal=confirmed_incidence_num&time_type=day&geo_type=state&time_values=" + yesterday + "&geo_value=" + state
+        urlWeekly = "https://api.covidcast.cmu.edu/epidata/covidcast/?data_source=jhu-csse&signal=confirmed_incidence_num&time_type=day&geo_type=state&time_values=" + weekAgo + "-" + yesterday + "&geo_value=" + state
         print(url)
     }
     //maybe should make this elif?
     else {
         print(yesterday)
-        urlWeekly = "https://api.covidcast.cmu.edu/epidata/covidcast/?data_source=jhu-csse&signal=confirmed_incidence_num&time_type=day&geo_type=nation&time_values=" + yesterday + "&geo_value=us"
+        urlWeekly = "https://api.covidcast.cmu.edu/epidata/covidcast/?data_source=jhu-csse&signal=confirmed_incidence_num&time_type=day&geo_type=nation&time_values=" + weekAgo + "-" + yesterday + "&geo_value=us"
         print(url)
     }
         
