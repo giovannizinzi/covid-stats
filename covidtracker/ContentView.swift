@@ -6,6 +6,7 @@
 // UI screen.mainbounds.width is an interesting way to logically space things
 
 import SwiftUI
+import SwiftSoup
 
 struct ContentView: View {
     var body: some View {
@@ -338,6 +339,7 @@ struct HomeView: View {
         .edgesIgnoringSafeArea(.all)
         }
         .onAppear() {
+            //This then calls getdata
             self.testAPIRequest()
         }
     }
@@ -410,15 +412,15 @@ struct HomeView: View {
                 self.main = result
             }
             
-            if(self.main == nil) {
-                print("DID THIS HAPPEN>>>")
-                self.useTwoDays.toggle()
-                self.index = 0
-                self.result = nil
-                self.daily = []
-                self.main = nil
-                getData()
-            }
+//            if(self.main == nil) {
+//                print("DID THIS HAPPEN>>>")
+//                self.useTwoDays.toggle()
+//                self.index = 0
+//                self.result = nil
+//                self.daily = []
+//                self.main = nil
+//                getData()
+//            }
     }
     .resume()
         
@@ -459,9 +461,55 @@ struct HomeView: View {
     .resume()
         
     
-    var urlForRt = ""
+    var urlForRt =  "https://epiforecasts.io/covid/posts/national/united-states/"
     
+        let sessionRt = URLSession(configuration: .default)
+        
+        sessionRt.dataTask(with: URL(string: urlForRt)!) { (data, _, err) in
+            
+            if err != nil{
+                print((err?.localizedDescription)!)
+                return
+        }
+            print("here is RT DATA", data ?? "")
+            var count = 0
+            var casesList: [Int] = []
+            let tempHTML = String(data: data!, encoding: .utf8)!
+            parseHTML(html: tempHTML)
     }
+    .resume()
+        
+    }
+    
+    private func parseHTML(html : String)
+       {
+           var textResult = [String]()
+
+           do
+           {
+               let doc: Document = try SwiftSoup.parse(html)
+               let els: Elements = try doc.select("table.table")
+               var count = 0
+               for link: Element in els.array() {
+                   let linkHref: String = try link.attr("tr")
+                   let linkText: String = try link.text()
+                   textResult.append(linkText)
+                   print(linkText)
+                   }
+               print("Yo did we get results here???", annTitles)
+           }
+           catch Exception.Error(let type, let message)
+           {
+               print(type)
+               print(message)
+           }
+           catch
+           {
+               print("SwiftSoup parsing data error!")
+           }
+          
+           print("All good!")
+       }
     
     func getHeight(value: Int, height: CGFloat)->CGFloat{
         

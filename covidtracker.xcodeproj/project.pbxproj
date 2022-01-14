@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		8C37B023278E9354008B671D /* APImodel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C37B022278E9354008B671D /* APImodel.swift */; };
+		8C37B02827916B12008B671D /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = 8C37B02727916B12008B671D /* SwiftSoup */; };
 		8C37B2C5278E1AEB00E5F643 /* covidtrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C37B2C4278E1AEB00E5F643 /* covidtrackerApp.swift */; };
 		8C37B2C7278E1AEB00E5F643 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C37B2C6278E1AEB00E5F643 /* ContentView.swift */; };
 		8C37B2C9278E1AEC00E5F643 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8C37B2C8278E1AEC00E5F643 /* Assets.xcassets */; };
@@ -53,6 +54,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8C37B02827916B12008B671D /* SwiftSoup in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -146,6 +148,9 @@
 			dependencies = (
 			);
 			name = covidtracker;
+			packageProductDependencies = (
+				8C37B02727916B12008B671D /* SwiftSoup */,
+			);
 			productName = covidtracker;
 			productReference = 8C37B2C1278E1AEB00E5F643 /* covidtracker.app */;
 			productType = "com.apple.product-type.application";
@@ -218,6 +223,9 @@
 				Base,
 			);
 			mainGroup = 8C37B2B8278E1AEB00E5F643;
+			packageReferences = (
+				8C37B02627916B10008B671D /* XCRemoteSwiftPackageReference "SwiftSoup" */,
+			);
 			productRefGroup = 8C37B2C2278E1AEB00E5F643 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -613,6 +621,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		8C37B02627916B10008B671D /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/scinfu/SwiftSoup";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		8C37B02727916B12008B671D /* SwiftSoup */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8C37B02627916B10008B671D /* XCRemoteSwiftPackageReference "SwiftSoup" */;
+			productName = SwiftSoup;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 8C37B2B9278E1AEB00E5F643 /* Project object */;
 }
