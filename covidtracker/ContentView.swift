@@ -25,6 +25,10 @@ struct HomeView: View {
     @State var result : Result!
     @State var main : MainData!
     @State var daily : [Daily] = []
+    @State var greatest = 0
+    
+    //Need to add one for Rt, deaths, dr visits, hospitalizations
+    
     @Environment(\.presentationMode) var presentationMode
     @State private var showPopover: Bool = false
     var dropDownList = [ "AK","AL","AR","AS","AZ","CA","CO","CT","DC","DE","FL","GA","GU","HI","IA","ID","IL","IN","KS","KY","LA","MA","MD","ME","MI","MN","MO","MS","MT","NC","ND","NE","NH","NJ","NM","NV","NY","OH","OK","OR","PA","PR","RI","SC","SD","TN","TX","UT","VA","VI","VT","WA","WI","WV","WY"]
@@ -190,7 +194,6 @@ struct HomeView: View {
                         
                         }
                         Text("1.08")
-                            .fontWeight(.bold)
                     }
                     .padding(.vertical)
                     .frame(width: (UIScreen.main.bounds.width / 3) - 30)
@@ -210,7 +213,6 @@ struct HomeView: View {
                     VStack(spacing: 12){
                         Text("Dr. Visits")
                         Text("\(self.main.value)")
-                            .fontWeight(.bold)
                     }
                     .padding(.vertical)
                     .frame(width: (UIScreen.main.bounds.width / 3) - 30)
@@ -238,7 +240,7 @@ struct HomeView: View {
                 .padding(.top)
                 .padding(.bottom, 2)
                 
-                HStack{
+                HStack(){
                     if(self.daily.isEmpty) {
                         ForEach(0...6,id: \.self){_ in
                                                
@@ -254,9 +256,9 @@ struct HomeView: View {
                                                            
                                                            Spacer(minLength: 0)
                                                            
-                                                           Capsule()
+                                                           Rectangle()
                                                                .fill(Color.clear)
-                                                               .frame(width: 15)
+                                                               .frame(width: 20)
                                                        }
                                                        
                                                    }
@@ -273,11 +275,18 @@ struct HomeView: View {
                     ForEach(self.daily){index in
                         
                         VStack(spacing: 10){
-                            
-                            Text("\(index.cases)")
-                                .lineLimit(1)
-                                .font(.system(size: 9))
-                                .foregroundColor(.gray)
+                            if(index.cases == 0) {
+                                Text("???")
+                                    .lineLimit(1)
+                                    .font(.system(size: 9))
+                                    .foregroundColor(.gray)
+                            }
+                            else {
+                                Text("\(index.cases)")
+                                    .lineLimit(1)
+                                    .font(.system(size: 9))
+                                    .foregroundColor(.gray)
+                            }
                             
                             GeometryReader{g in
                                 
@@ -285,9 +294,10 @@ struct HomeView: View {
                                     
                                     Spacer(minLength: 0)
                                     
-                                    Capsule()
-                                        .fill(Color("death"))
-                                        .frame(width: 15, height: getHeight(value: index.cases, height: g.frame(in: .global).height))
+                                    Rectangle()
+                                        .fill(Color("affected"))
+                                        .frame(width: 25, height: getHeight(value: index.cases, height: g.frame(in: .global).height))
+                                        .padding(.horizontal, 10)
                                 }
                                 
                             }
@@ -387,14 +397,15 @@ struct HomeView: View {
         }
             print("here is the data", data ?? "")
             var count = 0
+            var casesList: [Int] = []
             let jsonResult = try! JSONDecoder().decode(Result.self, from: data!)
             for result in jsonResult.epidata {
-                print("WEEKLY", result)
-                print(result.value)
                 self.daily.append(Daily(id: count, day: convertDateFormat(date: String(result.time_value)), cases: result.value))
+                casesList.append(result.value)
                 count += 1
             }
             print(self.daily)
+            self.greatest = casesList.max()!
     }
     .resume()
         
@@ -405,7 +416,13 @@ struct HomeView: View {
     
     func getHeight(value: Int, height: CGFloat)->CGFloat{
         
-        return 0
+        if self.greatest != 0 {
+            let converted = CGFloat(value) / CGFloat(self.greatest)
+            return converted * height
+        }
+        else {
+            return 0
+        }
     }
     
     func yesterDay() -> String {
